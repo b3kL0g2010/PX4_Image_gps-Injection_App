@@ -10,7 +10,7 @@ import sys
 import os
 import webbrowser
 
-
+from datetime import datetime
 from PySide6.QtGui import QIcon
 
 from PySide6.QtWidgets import QMessageBox, QToolButton, QGraphicsDropShadowEffect
@@ -67,6 +67,7 @@ class Worker(QThread):
     progress = Signal(int)
     finished = Signal(list)
     error = Signal(str)
+    log = Signal(str)
 
     def __init__(self, img, ulg, out, interval, apply_offset):
         super().__init__()
@@ -83,7 +84,8 @@ class Worker(QThread):
                 self.ulg,
                 self.out,
                 self.apply_offset,
-                self.progress.emit
+                self.progress.emit,
+                self.log.emit
             )
             self.finished.emit(violations)
         except Exception as e:
@@ -180,19 +182,31 @@ class MainWindow(QWidget):
 
         # LEFT PANEL
         left_panel = QVBoxLayout()
-        left_panel.setSpacing(20)
+        left_panel.setSpacing(5)
+
+        # HEADER
+         # LEFT PANEL
+        left_panel = QVBoxLayout()
+        left_panel.setSpacing(5)
 
         # HEADER
         logo_label = QLabel()
+
         pixmap = QPixmap(LOGO_PATH)
+
         if not pixmap.isNull():
-            pixmap = pixmap.scaled(
-                200, 200,
-                Qt.KeepAspectRatio,
+            scaled_pixmap = pixmap.scaled(
+            # scaled_pixmap = pixmap.scaledToWidth(
+                300, 120,
+                Qt.KeepAspectRatio,                 
                 Qt.SmoothTransformation
             )
-            logo_label.setPixmap(pixmap.scaledToHeight(60))
+
+            logo_label.setPixmap(scaled_pixmap)
             logo_label.setAlignment(Qt.AlignCenter)
+
+
+
 
         # Title Row
         title_row = QHBoxLayout()
@@ -326,30 +340,33 @@ class MainWindow(QWidget):
         # RIGHT PANEL (Video Preview)
         right_panel = QVBoxLayout()
 
-        warning_card = QLabel(
-            "⚠ EXPERIMENTAL BUILD\n\n"
-            "This software is currently under development.\n"
-            "Results may vary. Validate outputs before production use."
-        )
-        warning_card.setAlignment(Qt.AlignCenter)
-        warning_card.setStyleSheet("""
-            background-color:#2A1F00;
-            color:#FFB74D;
+        # ---- LOG PANEL ----
+        self.log_output = QPlainTextEdit()
+        self.log_output.setReadOnly(True)
+        self.log_output.setMinimumHeight(200)
+        self.log_output.setStyleSheet("""
+            background-color:#0E0E0E;
+            border:1px solid #333;
             border-radius:12px;
-            padding:15px;
-            font-size:13px;
+            padding:10px;
+            color:#00FF99;
+            font-family:Consolas;
+            font-size:12px;
         """)
 
+        right_panel.addWidget(self.log_output)
+
+        # ---- VIDEO PANEL ----
         self.video_widget = QVideoWidget()
         self.video_widget.setMinimumHeight(400)
         self.video_widget.setAspectRatioMode(Qt.IgnoreAspectRatio)
 
-
-        right_panel.addWidget(warning_card)
         right_panel.addWidget(self.video_widget)
 
+        # ---- ADD TO MAIN ----
         main_layout.addLayout(left_panel, 2)
         main_layout.addLayout(right_panel, 3)
+
 
         # Setup Video Player
         self.player = QMediaPlayer()
@@ -424,6 +441,16 @@ class MainWindow(QWidget):
                 background-color: rgba(255,255,255,0.1);
                 border-radius: 8px;
             }
+                           
+            QPlainTextEdit {
+                background-color: #0E0E0E;
+                border: 1px solid #333;
+                border-radius: 10px;
+                padding: 10px;
+                color: #00FF99;
+                font-family: Consolas;
+                font-size: 12px;
+            }
         """)
 
     # ---- Animated Progress ----
@@ -433,6 +460,14 @@ class MainWindow(QWidget):
         self.anim.setStartValue(self.progress.value())
         self.anim.setEndValue(value)
         self.anim.start()
+
+    # ---- Log Console output ----
+    def append_log(self, message):
+        self.log_output.appendPlainText(message)
+        self.log_output.verticalScrollBar().setValue(
+            self.log_output.verticalScrollBar().maximum()
+        )
+
 
     # ---- Start Processing ----
     def start_process(self):
@@ -486,6 +521,13 @@ class MainWindow(QWidget):
 
         # ---- START WORKER ----
 
+
+        self.log_output.clear()
+        self.append_log(
+            f"========== Session Started {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =========="
+        )
+        self.append_log("")
+
         self.start_btn.setEnabled(False)
 
         self.worker = Worker(
@@ -494,12 +536,15 @@ class MainWindow(QWidget):
             output_folder,
             interval,
             apply_offset
+            
         )
 
         self.worker.progress.connect(self.progress.setValue)
+        self.worker.log.connect(self.append_log)
         self.worker.finished.connect(self.processing_done)
         self.worker.error.connect(self.processing_error)
 
+        self.start_btn.setEnabled(False)
         self.worker.start()
 
     
