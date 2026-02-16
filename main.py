@@ -4,6 +4,11 @@
 
 #py main.py
 
+#git pull origin main
+# git reset --hard
+# pip install -r requirements.txt
+
+
 
 
 import sys
