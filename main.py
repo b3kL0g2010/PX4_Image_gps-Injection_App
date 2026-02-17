@@ -263,7 +263,7 @@ class MainWindow(QWidget):
 
 
         # Checkbox
-        self.utc_checkbox = QCheckBox("Apply +8 Hour UTC Offset")
+        self.utc_checkbox = QCheckBox("Apply +8 Hour UTC Offset ( ZR10 CAMERA ONLY )")
         self.utc_checkbox.setChecked(True)  # default ON
         left_panel.addWidget(self.utc_checkbox)
 
@@ -556,47 +556,57 @@ class MainWindow(QWidget):
 
     from PySide6.QtWidgets import QMessageBox
 
-
+    # ---- Notification Area ----
     def processing_done(self, violations):
 
         self.start_btn.setEnabled(True)
 
-        if violations:
-
-            max_show = 20
-            display_list = violations[:max_show]
-
-            message = (
-                "The following images have invalid dates:\n\n"
-            )
-
-            message += "\n".join(display_list)
-
-            message += (
-                "\n\n"
-                "Recommended Action:\n"
-                "• Check the listed Images Dates\n"
-                "• Delete these images if not important.\n"
-                "• Correct camera date settings.\n"
-                
-            )
-
-
-            if len(violations) > max_show:
-                message += f"\n\n... and {len(violations) - max_show} more"
-
-            QMessageBox.warning(
-                self,
-                "Interval Mismatch",
-                message
-            )
-
-        else:
+        # No violations → success
+        if not violations:
             QMessageBox.information(
                 self,
-                "Done",
-                "GeoTagging Completed! "
+                "Geotagging Completed",
+                "All images successfully validated and injected."
             )
+
+            self.log_output.appendPlainText("\n✅ Geotagging SUCCESS.")
+            return
+
+        # Violations exist → failure
+        max_show = 20
+        display_list = violations[:max_show]
+
+        message = (
+            "Geotagging FAILED.\n\n"
+            "The following images did not match telemetry:\n\n"
+        )
+
+        message += "\n".join(display_list)
+
+        message += (
+            "\n\nRecommended Actions:\n"
+            "• Verify image DateTimeOriginal values.\n"
+            "• Ensure correct ULog file is selected.\n"
+            "• Enable +8 hour offset if needed.\n"
+            "• Remove images captured outside this flight.\n"
+        )
+
+        if len(violations) > max_show:
+            message += (
+                f"\n\n... and {len(violations) - max_show} more."
+            )
+
+        QMessageBox.warning(
+            self,
+            "Geotagging Failed",
+            message
+        )
+
+        self.log_output.appendPlainText("\n❌ Geotagging FAILED.")
+        self.log_output.appendPlainText(
+            f"{len(violations)} image(s) rejected."
+        )
+
 
 
 
