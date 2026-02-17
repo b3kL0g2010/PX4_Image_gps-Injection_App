@@ -338,28 +338,9 @@ class MainWindow(QWidget):
 
         left_panel.addWidget(footer)
 
-
-        
-
-
+        # ---- RIGHT PANEL STARTS HERE ----
         # RIGHT PANEL (Video Preview)
         right_panel = QVBoxLayout()
-
-        # ---- LOG PANEL ----
-        self.log_output = QPlainTextEdit()
-        self.log_output.setReadOnly(True)
-        self.log_output.setMinimumHeight(200)
-        self.log_output.setStyleSheet("""
-            background-color:#0E0E0E;
-            border:1px solid #333;
-            border-radius:12px;
-            padding:10px;
-            color:#00FF99;
-            font-family:Consolas;
-            font-size:12px;
-        """)
-
-        right_panel.addWidget(self.log_output)
 
         # ---- VIDEO PANEL ----
         self.video_widget = QVideoWidget()
@@ -384,6 +365,26 @@ class MainWindow(QWidget):
 
         self.player.setLoops(QMediaPlayer.Infinite)
         self.player.play()
+        # ---- Video Panel ENDS HERE ----
+
+
+        # ---- LOG PANEL ----
+        self.log_output = QPlainTextEdit()
+        self.log_output.setReadOnly(True)
+        self.log_output.setMinimumHeight(200)
+        self.log_output.setStyleSheet("""
+            background-color:#0E0E0E;
+            border:1px solid #333;
+            border-radius:12px;
+            padding:10px;
+            color:#00FF99;
+            font-family:Consolas;
+            font-size:12px;
+        """)
+
+        right_panel.addWidget(self.log_output)
+        # ---- LOG PANEL ENDS HERE ----
+        # ---- UI ENDS HERE -----
 
 
     # ---- Styled Input Field ----
